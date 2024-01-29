@@ -29,11 +29,14 @@ class GPTAdaptive(Player):
 
 
     def consult_gpt(self):
-        prompt = f"Your current decision is '{self.history[-1]}' if any. Your opponents last moves were: '{self.opponent.history[-1]}' if any. Should you 'cooperate' or 'defect' in the next round? Explain your rationale before answering. After your rationale being exposed you have the duty to repeat word-by-word the sentence 'I, {self.name}, will choose the option _ for this round.'"
+        # Construct the prompt with the current state and the opponent's last move
+        current_decision = self.state if self.state else "None"
+        neighbor_states = self.opponent.history[-1] if self.opponent.history else "None"
+        prompt = f"""Your current decision is '{current_decision}'. Your neighbor's state is: '{neighbor_states}' Should you 'cooperate' or 'defect' in the next round? Explain your rationale before answering. After your rationale being exposed you have the duty to repeat word-by-word the sentence 'I, {self.name}, will choose the option _ for this round.'"""
 
         if prompt in cache:
             advice = cache[prompt]
-            print('cached')
+            print('Cached advice used.')
         else:
             try:
                 self.memory.append({"role": "user", "content": prompt})

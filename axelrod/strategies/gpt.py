@@ -58,9 +58,14 @@ class GPTAdaptive(Player):
 
         return advice
 
-    def decide(self, neighbors_states):
+    def decide(self):
         advice = self.consult_gpt()
-        print(f"\nAgent '{self.name}' deciding based on advice: \n{advice}")
+        if advice is None:
+            print(f"Agent '{self.name}' encountered an error and will make a random decision.")
+            self.state = np.random.choice([C, D])
+            decision_str = 'COOPERATE' if self.state == C else 'DEFECT'
+            print(f"Due to the error, Agent {self.name} decides to {decision_str} RANDOMLY.")
+            return self.state
 
         advice_lower = advice.lower()
         pattern = r"will choose the option (.*?) for this round"
@@ -70,15 +75,26 @@ class GPTAdaptive(Player):
             decision = match.group(1).strip()
             if "cooperat" in decision:
                 self.state = C
-                print(f"Agent {self.name} decides to COOPERATE.")
+                decision_str = 'COOPERATE'
             elif "defect" in decision:
                 self.state = D
-                print(f"Agent {self.name} decides to DEFECT.")
+                decision_str = 'DEFECT'
         else:
             self.state = np.random.choice([C, D])
-            print(f"Agent {self.name} decides to {self.state} RANDOMLY because the response could not be parsed.")
+            decision_str = 'COOPERATE' if self.state == C else 'DEFECT'
+            print(f"Response could not be parsed. Agent {self.name} decides to {decision_str} RANDOMLY.")
 
+        print(f"Agent {self.name} decides to {decision_str}.")
         return self.state
+
+    def strategy(self, opponent: Player) -> Action:
+        self.opponent = opponent  # Keep track of the opponent
+        index = len(self.history)
+        if index < len(self.initial_plays):
+            return self.initial_plays[index]
+
+        # Use decide method to make a decision based on GPT's advice
+        return self.decide()
 
     def strategy(self, opponent: Player) -> Action:
         self.opponent = opponent  # Keep track of the opponent
